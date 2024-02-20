@@ -16,7 +16,6 @@ import * as EthUtil from 'ethereumjs-util'
 import { TransactionFactory } from '@ethereumjs/tx'
 
 import { URL } from 'url'
-import { KeyIdType } from 'aws-sdk/clients/kms'
 
 import { createSignature, getEcPublicKey } from './eth'
 import { getEthAddressFromKMS, getPublicKey } from './kms'
@@ -24,7 +23,7 @@ import { ChainSettings, KMSProviderConstructor } from './types'
 import { _TypedDataEncoder } from '@ethersproject/hash'
 
 export class KMSProvider {
-  private keyId: KeyIdType
+  private keyId: string
   private address: string
   private chainId: number
   private chainSettings: ChainSettings

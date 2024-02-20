@@ -1,4 +1,3 @@
-import { KMS } from 'aws-sdk'
 import * as asn1 from 'asn1.js'
 import { keccak256 } from 'js-sha3'
 import { BN } from 'ethereumjs-util'
@@ -74,10 +73,8 @@ const getV = (
   return new EthUtil.BN(v)
 }
 
-export const getEthAddressFromPublicKey = (
-  publicKey: KMS.PublicKeyType
-): string => {
-  const res = EcdsaPubKey.decode(publicKey, 'der')
+export const getEthAddressFromPublicKey = (publicKey: Uint8Array): string => {
+  const res = EcdsaPubKey.decode(Buffer.from(publicKey))
   let pubKeyBuffer: Buffer = res.pubKey.data
 
   pubKeyBuffer = pubKeyBuffer.slice(1, pubKeyBuffer.length)
@@ -90,8 +87,8 @@ export const getEthAddressFromPublicKey = (
 }
 
 /* Returns the EC public key (with leading 0x04) in hex string format */
-export const getEcPublicKey = (publicKey: KMS.PublicKeyType): string => {
-  const res = EcdsaPubKey.decode(publicKey, 'der')
+export const getEcPublicKey = (publicKey: Uint8Array): string => {
+  const res = EcdsaPubKey.decode(Buffer.from(publicKey))
   let pubKeyBuffer: Buffer = res.pubKey.data
 
   pubKeyBuffer = pubKeyBuffer.slice(0, pubKeyBuffer.length)

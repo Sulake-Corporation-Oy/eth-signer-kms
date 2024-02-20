@@ -1,9 +1,20 @@
-import { KMS } from 'aws-sdk'
+import { KMSClient, SignCommandInput } from '@aws-sdk/client-kms'
 import Common, { CommonOpts } from '@ethereumjs/common'
 
 export type SignParams = {
-  keyId: KMS.SignRequest['KeyId']
+  keyId: SignCommandInput['KeyId']
   message: Buffer
+  kmsInstance: KMSClient
+}
+
+export type GetPublicKeyParams = {
+  keyId: SignCommandInput['KeyId']
+  kmsInstance: KMSClient
+}
+
+export type GetEthAddressFromKMSparams = {
+  keyId: SignCommandInput['KeyId']
+  kmsInstance: KMSClient
 }
 
 export type CreateSignatureParams = SignParams & {
@@ -16,7 +27,7 @@ export type ChainSettings = Omit<CommonOpts, 'chain'> & {
 }
 
 export type KMSProviderConstructor = {
-  keyId: KMS.KeyIdType
+  keyId: string
   providerOrUrl: string
   shareNonce?: boolean
   pollingInterval?: number
