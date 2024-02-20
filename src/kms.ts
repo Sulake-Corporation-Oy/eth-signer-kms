@@ -1,27 +1,24 @@
-import {
-  SignParams,
-  GetEthAddressFromKMSparams,
-  GetPublicKeyParams,
-} from './types'
+import { KMS } from 'aws-sdk'
+import { SignParams } from './types'
 import { getEthAddressFromPublicKey } from './eth'
 
-export const getPublicKey = (getPublicKeyParams: GetPublicKeyParams) => {
-  const { keyId, kmsInstance } = getPublicKeyParams
-  return kmsInstance.getPublicKey({ KeyId: keyId }).promise()
-}
+export const kms = new KMS()
+
+export const getPublicKey = (KeyId: KMS.GetPublicKeyRequest['KeyId']) =>
+  kms.getPublicKey({ KeyId }).promise()
+
 export const getEthAddressFromKMS = async (
-  getEthAddressFromKMSparams: GetEthAddressFromKMSparams,
+  keyId: KMS.GetPublicKeyRequest['KeyId']
 ) => {
-  const { keyId, kmsInstance } = getEthAddressFromKMSparams
-  const KMSKey = await getPublicKey({ keyId, kmsInstance })
+  const KMSKey = await getPublicKey(keyId)
 
   return getEthAddressFromPublicKey(KMSKey.PublicKey)
 }
 
 export const sign = (signParams: SignParams) => {
-  const { keyId, message, kmsInstance } = signParams
+  const { keyId, message } = signParams
 
-  return kmsInstance
+  return kms
     .sign({
       KeyId: keyId,
       Message: message,

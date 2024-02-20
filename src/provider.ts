@@ -14,13 +14,12 @@ import type {
 import Common from '@ethereumjs/common'
 import * as EthUtil from 'ethereumjs-util'
 import { TransactionFactory } from '@ethereumjs/tx'
-import { KMS } from 'aws-sdk'
 
 import { URL } from 'url'
 import { KeyIdType } from 'aws-sdk/clients/kms'
 
-import { createSignature } from './eth'
-import { getEthAddressFromKMS } from './kms'
+import { createSignature, getEcPublicKey } from './eth'
+import { getEthAddressFromKMS, getPublicKey } from './kms'
 import { ChainSettings, KMSProviderConstructor } from './types'
 import { _TypedDataEncoder } from '@ethersproject/hash'
 
@@ -31,22 +30,19 @@ export class KMSProvider {
   private chainSettings: ChainSettings
   private initializedChainId: Promise<void>
   private initializedAddress: Promise<void>
-  private kmsInstance: KMS
   public engine: ProviderEngine
 
   constructor({
     keyId,
     providerOrUrl,
     pollingInterval = 4000,
-    chainSettings = {},
-    kmsInstance = new KMS()
+    chainSettings = {}
   }: KMSProviderConstructor) {
     this.keyId = keyId
     this.engine = new ProviderEngine({
       pollingInterval
     })
     this.chainSettings = chainSettings
-    this.kmsInstance = kmsInstance
 
     if (!KMSProvider.isValidProvider(providerOrUrl)) {
       throw new Error(
@@ -91,7 +87,6 @@ export class KMSProvider {
           })
 
           const txSignature = await createSignature({
-            kmsInstance: this.kmsInstance,
             keyId: self.keyId,
             message: tx.getMessageToSign(),
             address: self.address,
@@ -132,7 +127,6 @@ export class KMSProvider {
           const msgHashBuff = EthUtil.hashPersonalMessage(dataBuff)
 
           const { r, s, v } = await createSignature({
-            kmsInstance: this.kmsInstance,
             keyId: self.keyId,
             message: msgHashBuff,
             address: self.address
@@ -151,7 +145,6 @@ export class KMSProvider {
       })
     )
 
-    
     this.engine.addProvider(new FiltersSubprovider())
 
     if (typeof providerOrUrl === 'string') {
@@ -180,10 +173,7 @@ export class KMSProvider {
   private async initializeAddress(): Promise<void> {
     return new Promise(async (resolve, reject) => {
       try {
-        this.address = await getEthAddressFromKMS({
-          keyId: this.keyId,
-          kmsInstance: this.kmsInstance,
-        })
+        this.address = await getEthAddressFromKMS(this.keyId)
         resolve()
       } catch (e) {
         reject(e)
@@ -255,7 +245,6 @@ export class KMSProvider {
     })
 
     const { r, s, v } = await createSignature({
-      kmsInstance: this.kmsInstance,
       keyId: this.keyId,
       message: dataBuff,
       address: this.address,
@@ -270,6 +259,13 @@ export class KMSProvider {
   public async getAddress(): Promise<string> {
     await this.initializedAddress
     return this.address
+  }
+
+  /* Returns the EC public key (with leading 0x04) in hex string format */
+  public async getEcPublicKey(): Promise<string> {
+    const KMSKey = await getPublicKey(this.keyId)
+
+    return getEcPublicKey(KMSKey.PublicKey)
   }
 
   public static isValidProvider(provider: string | any): boolean {
